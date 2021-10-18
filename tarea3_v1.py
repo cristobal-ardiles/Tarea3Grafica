@@ -30,7 +30,6 @@ class Controller:
         self.camUp = np.array([0, 1, 0])
         self.distance = 20
 
-
 controller = Controller()
 
 def setPlot(texPipeline, axisPipeline, lightPipeline):
@@ -122,6 +121,7 @@ def on_key(window, key, scancode, action, mods):
         controller.viewPos = np.array([-controller.distance,controller.distance,controller.distance]) #Vista diagonal 2
         controller.camUp = np.array([0,1,0])
     
+
     else:
         print('Unknown key')
 
@@ -307,8 +307,8 @@ def createWall(pipeline):
 
 # TAREA3: Esta función crea un grafo de escena especial para el auto.
 def createCarScene(pipeline):
-    chasis = createOFFShape(pipeline, 'alfa2.off', 1.0, 0.0, 0.0)
-    wheel = createOFFShape(pipeline, 'wheel.off', 0.0, 0.0, 0.0)
+    chasis = createOFFShape(pipeline, 'alfa2.off', 1.0, 1.0, 0.0)
+    wheel = createOFFShape(pipeline, 'wheel.off', 1.0, 0.0, 0.0)
 
     scale = 2.0
     rotatingWheelNode = sg.SceneGraphNode('rotatingWheel')
@@ -334,6 +334,9 @@ def createCarScene(pipeline):
     wheel4Node.transform = tr.matmul([tr.uniformScale(scale),tr.translate(0.066090,0.037409,-0.091705)])
     wheel4Node.childs += [rotatingWheelNode]
 
+    cameraNode = sg.SceneGraphNode('camera')
+    cameraNode.transform = tr.translate(0,1,-4)
+
     car1 = sg.SceneGraphNode('car1')
     car1.transform = tr.matmul([tr.translate(2.0, -0.037409, 5.0), tr.rotationY(np.pi)])
     car1.childs += [chasisNode]
@@ -341,6 +344,14 @@ def createCarScene(pipeline):
     car1.childs += [wheel2Node]
     car1.childs += [wheel3Node]
     car1.childs += [wheel4Node]
+    # Adding camera to the car system
+    car1.childs += [cameraNode]
+
+    # rotatedCar = sg.SceneGraphNode('rotatedCar1')
+    # rotatedCar.childs += [car1]
+    
+    # traslatedCar = sg.SceneGraphNode('traslatedCar1')
+    # traslatedCar.childs += [rotatedCar]
 
     scene = sg.SceneGraphNode('system')
     scene.childs += [car1]
@@ -453,7 +464,7 @@ if __name__ == "__main__":
 
     #NOTA: Aqui creas un objeto con tu escena
     dibujo = createStaticScene(texPipeline)
-    car =createCarScene(lightPipeline)
+    car = createCarScene(lightPipeline)
 
     setPlot(texPipeline, axisPipeline,lightPipeline)
 
@@ -462,6 +473,12 @@ if __name__ == "__main__":
     # glfw will swap buffers as soon as possible
     glfw.swap_interval(0)
 
+    #Setting initial values for car rotation and traslation
+    theta = np.pi
+    r = 2
+    t0 = glfw.get_time()
+    carPos = sg.findPosition(car, "car1")
+    carPos = carPos[0:3]
     while not glfw.window_should_close(window):
 
         # Measuring performance
@@ -470,6 +487,31 @@ if __name__ == "__main__":
 
         # Using GLFW to check for input events
         glfw.poll_events()
+
+        #Getting time
+        t1 = glfw.get_time()
+        dt = t1 - t0
+        t0 = t1
+
+        #Controller events
+        if(glfw.get_key(window, glfw.KEY_LEFT) == glfw.PRESS):
+            theta += dt
+        
+        if(glfw.get_key(window, glfw.KEY_RIGHT) == glfw.PRESS):
+            theta -= dt
+
+        if(glfw.get_key(window, glfw.KEY_UP) == glfw.PRESS):
+            carPos[0] += r*np.sin(theta)*dt
+            carPos[2] += r*np.cos(theta)*dt
+
+        carNode = sg.findNode(car, "car1")
+        carNode.transform = tr.matmul([tr.translate(carPos[0], carPos[1], carPos[2]), tr.rotationY(theta)])
+
+        # Making first-person view
+        controller.at = np.array([float(carPos[0]) + r*np.sin(theta), float(carPos[1]), float(carPos[2]) + r*np.cos(theta)])
+        controller.camUp = np.array([0,1,0])
+        cameraPos = sg.findPosition(car, 'camera')
+        controller.viewPos = np.array([float(cameraPos[0]), float(cameraPos[1]), float(cameraPos[2])])
 
         # Clearing the screen in both, color and depth
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -493,8 +535,6 @@ if __name__ == "__main__":
 
         glUseProgram(lightPipeline.shaderProgram)
         sg.drawSceneGraphNode(car, lightPipeline, "model")
-
-        
 
         # Once the render is done, buffers are swapped, showing only the complete scene.
         glfw.swap_buffers(window)
