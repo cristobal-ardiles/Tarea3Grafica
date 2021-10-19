@@ -296,14 +296,108 @@ def createTiledFloor(dim):
 # Esta función recibe como parámetro el pipeline que se usa para las texturas (texPipeline)
 
 def createHouse(pipeline):
-    pass
+
+    wall = createGPUShape(pipeline, bs.createTextureQuad(2,2))
+    wall.texture = es.textureSimpleSetup(
+        getAssetPath('wall3.jpg'), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
+    glGenerateMipmap(GL_TEXTURE_2D)
+
+    roof = createGPUShape(pipeline, bs.createTextureQuad(2,2))
+    roof.texture = es.textureSimpleSetup(
+        getAssetPath('roof3.jpg'), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
+    glGenerateMipmap(GL_TEXTURE_2D)
+
+    wallNode = sg.SceneGraphNode('wall')
+    wallNode.childs = [wall]
+
+    wall1Node = sg.SceneGraphNode('wall1')
+    wall1Node.transform = tr.translate(0,0,0.5)
+    wall1Node.childs += [wallNode]
+    
+    wall2Node = sg.SceneGraphNode('wall2')
+    wall2Node.transform = tr.translate(0,0,-0.5)
+    wall2Node.childs += [wallNode]
+
+    rotatedWallNode = sg.SceneGraphNode('rotatedWall')
+    rotatedWallNode.transform = tr.rotationY(np.pi/2)
+    rotatedWallNode.childs += [wallNode]
+
+    wall3Node = sg.SceneGraphNode('wall3')
+    wall3Node.transform = tr.translate(0.5,0,0)
+    wall3Node.childs += [rotatedWallNode]
+
+    wall4Node = sg.SceneGraphNode('wall4')
+    wall4Node.transform = tr.translate(-0.5,0,0)
+    wall4Node.childs += [rotatedWallNode]
+
+    roofNode = sg.SceneGraphNode('roof')
+    roofNode.childs += [roof]
+
+    rotatedRoof1Node = sg.SceneGraphNode('rotatedRoof1')
+    rotatedRoof1Node.transform = tr.matmul([tr.translate(0,0.7,-0.5*np.cos(np.pi/4)),tr.rotationX(np.pi/4)])
+    rotatedRoof1Node.childs += [roofNode]
+
+    rotatedRoof2Node = sg.SceneGraphNode('rotatedRoof2')
+    rotatedRoof2Node.transform = tr.matmul([tr.translate(0,0.7,0.5*np.cos(np.pi/4)),tr.rotationX(-np.pi/4)])
+    rotatedRoof2Node.childs += [roofNode]
+
+    houseNode = sg.SceneGraphNode('house')
+    houseNode.transform = tr.uniformScale(0.8)
+    houseNode.childs += [rotatedRoof1Node, rotatedRoof2Node, wall1Node, wall2Node, wall3Node, wall4Node]
+
+    return houseNode
 
 # TAREA3: Implementa la función "createWall" que crea un objeto que representa un muro
 # y devuelve un nodo de un grafo de escena (un objeto sg.SceneGraphNode) que representa toda la geometría y las texturas
 # Esta función recibe como parámetro el pipeline que se usa para las texturas (texPipeline)
 
 def createWall(pipeline):
-    pass
+    
+    face = createGPUShape(pipeline, bs.createTextureQuad(1,1))
+    face.texture = es.textureSimpleSetup(
+        getAssetPath('wall5.jpg'), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
+    glGenerateMipmap(GL_TEXTURE_2D)
+
+    lateralFaceNode = sg.SceneGraphNode('lateralFace')
+    lateralFaceNode.transform = tr.rotationY(np.pi/2)
+    lateralFaceNode.childs += [face]
+
+    topFaceNode = sg.SceneGraphNode('topFace')
+    topFaceNode.transform = tr.rotationX(np.pi/2)
+    topFaceNode.childs += [face]
+
+    face1Node = sg.SceneGraphNode('face1')
+    face1Node.transform = tr.translate(0,0,0.5)
+    face1Node.childs += [face]
+
+    face2Node = sg.SceneGraphNode('face2')
+    face2Node.transform = tr.translate(0,0,-0.5)
+    face2Node.childs += [face]
+    
+    face3Node = sg.SceneGraphNode('face1')
+    face3Node.transform = tr.translate(0.5,0,0)
+    face3Node.childs += [lateralFaceNode]
+
+    face4Node = sg.SceneGraphNode('face1')
+    face4Node.transform = tr.translate(-0.5,0,0)
+    face4Node.childs += [lateralFaceNode]
+
+    face5Node = sg.SceneGraphNode('face1')
+    face5Node.transform = tr.translate(0,0.5,0)
+    face5Node.childs += [topFaceNode]
+    
+    wallBlockNode = sg.SceneGraphNode('wallBlock')
+    wallBlockNode.transform = tr.scale(0.3,0.4,1.2)
+    wallBlockNode.childs += [face1Node, face2Node, face3Node, face4Node, face5Node]
+
+    wallNode = sg.SceneGraphNode('fullWall')
+    for i in range(-5,5,1):
+        node = sg.SceneGraphNode('wallPart'+str(i+5))
+        node.transform = tr.translate(0,0,-1.0*i)
+        node.childs += [wallBlockNode]
+        wallNode.childs += [node]
+    
+    return wallNode
 
 # TAREA3: Esta función crea un grafo de escena especial para el auto.
 def createCarScene(pipeline):
@@ -411,14 +505,57 @@ def createStaticScene(pipeline):
     arcBottom = sg.SceneGraphNode('arcBottom')
     arcBottom.transform = tr.matmul([tr.translate(0.0,0.0,5.5), tr.rotationY(np.pi)])
     arcBottom.childs += [arcNode]
+
+    #adding houses
+    house = createHouse(pipeline)
+
+    house1 = sg.SceneGraphNode('house1')
+    house1.transform = tr.translate(-4,0,3)
+    house1.childs += [house]
+
+    house2 = sg.SceneGraphNode('house2')
+    house2.transform = tr.translate(-4,0,1)
+    house2.childs += [house]
     
+    house3 = sg.SceneGraphNode('house3')
+    house3.transform = tr.translate(-4,0,-1)
+    house3.childs += [house]
+    
+    house4 = sg.SceneGraphNode('house4')
+    house4.transform = tr.translate(4,0,1)
+    house4.childs += [house]
+    
+    house5 = sg.SceneGraphNode('house5')
+    house5.transform = tr.translate(4,0,-1)
+    house5.childs += [house]
+
+    wall = createWall(pipeline)
+
+    wall1 = sg.SceneGraphNode('wall1')
+    wall1.transform += tr.translate(-2.5, 0, 0)
+    wall1.childs += [wall]
+
+    wall2 = sg.SceneGraphNode('wall2')
+    wall2.transform += tr.translate(2.50, 0, 0)
+    wall2.childs += [wall]
+
+    wall3 = sg.SceneGraphNode('wall3')
+    wall3.transform += tr.translate(-5.5, 0, 0)
+    wall3.childs += [wall]
+
+    wall4 = sg.SceneGraphNode('wall4')
+    wall4.transform += tr.translate(5.5, 0, 0)
+    wall4.childs += [wall]
+
     scene = sg.SceneGraphNode('system')
     scene.childs += [linearSectorLeft]
     scene.childs += [linearSectorRight]
     scene.childs += [arcTop]
     scene.childs += [arcBottom]
     scene.childs += [sandNode]
-    
+    scene.childs += [house1, house2, house3, house4, house5]
+    scene.childs += [wall1, wall2, wall3, wall4]
+
     return scene
 
 if __name__ == "__main__":
@@ -494,15 +631,18 @@ if __name__ == "__main__":
         t0 = t1
 
         #Controller events
-        if(glfw.get_key(window, glfw.KEY_LEFT) == glfw.PRESS):
+        if(glfw.get_key(window, glfw.KEY_A) == glfw.PRESS):
             theta += dt
         
-        if(glfw.get_key(window, glfw.KEY_RIGHT) == glfw.PRESS):
+        if(glfw.get_key(window, glfw.KEY_D) == glfw.PRESS):
             theta -= dt
 
-        if(glfw.get_key(window, glfw.KEY_UP) == glfw.PRESS):
+        if(glfw.get_key(window, glfw.KEY_W) == glfw.PRESS):
             carPos[0] += r*np.sin(theta)*dt
             carPos[2] += r*np.cos(theta)*dt
+        if(glfw.get_key(window, glfw.KEY_S) == glfw.PRESS):
+            carPos[0] -= r*np.sin(theta)*dt
+            carPos[2] -= r*np.cos(theta)*dt
 
         carNode = sg.findNode(car, "car1")
         carNode.transform = tr.matmul([tr.translate(carPos[0], carPos[1], carPos[2]), tr.rotationY(theta)])
